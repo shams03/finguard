@@ -4,7 +4,7 @@ use crate::{
 };
 use axum::{
     Extension, Json, Router,
-    extract::{Path, Request, State},
+    extract::{FromRequest, Path, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -21,6 +21,41 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer};
 use tracing::Instrument;
+
+/// JSON body extractor whose failures use the standard error schema (and carry
+/// the request's trace id) instead of axum's plain-text rejection.
+pub struct ApiJson<T>(pub T);
+
+impl<S, T> FromRequest<S> for ApiJson<T>
+where
+    T: serde::de::DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = ApiError;
+
+    async fn from_request(req: Request, state: &S) -> Result<Self, ApiError> {
+        let trace = req
+            .extensions()
+            .get::<RequestCtx>()
+            .map(|c| c.trace_id)
+            .unwrap_or_default();
+        match Json::<T>::from_request(req, state).await {
+            Ok(Json(v)) => Ok(ApiJson(v)),
+            Err(_) => Err(ApiError::invalid(
+                "the request body is missing, too large, or not valid JSON for this endpoint",
+                trace,
+            )),
+        }
+    }
+}
+
+async fn not_found(Extension(ctx): Extension<RequestCtx>) -> ApiError {
+    ApiError::new(
+        ErrorCode::NotFound,
+        ErrorCode::NotFound.default_message(),
+        ctx.trace_id,
+    )
+}
 
 /// Per-request identifiers, also attached to the tracing span.
 #[derive(Clone, Copy)]
@@ -94,6 +129,7 @@ pub fn router(state: AppState, cors_origin: &str) -> Router {
             "/api/v1/demo/failures/{provider}/{mode}",
             post(demo_failure),
         )
+        .fallback(not_found)
         .layer(RequestBodyLimitLayer::new(16 * 1024))
         .layer(middleware::from_fn(request_context))
         .layer(cors)
@@ -283,7 +319,7 @@ async fn post_command(
     State(s): State<AppState>,
     Extension(ctx): Extension<RequestCtx>,
     headers: HeaderMap,
-    Json(body): Json<CommandBody>,
+    ApiJson(body): ApiJson<CommandBody>,
 ) -> ApiResult<(StatusCode, Json<Value>)> {
     let a = actor(&s, &ctx).await?;
     let key = idem_key(&headers, &ctx)?;
@@ -368,7 +404,7 @@ async fn post_confirm(
     Extension(ctx): Extension<RequestCtx>,
     headers: HeaderMap,
     Path(id): Path<String>,
-    Json(body): Json<ConfirmBody>,
+    ApiJson(body): ApiJson<ConfirmBody>,
 ) -> ApiResult<Json<Value>> {
     let a = actor(&s, &ctx).await?;
     let aid: ActionId = parse_id(&id, "action", &ctx)?;
@@ -429,7 +465,7 @@ async fn post_clarify(
     Extension(ctx): Extension<RequestCtx>,
     headers: HeaderMap,
     Path(id): Path<String>,
-    Json(body): Json<ClarifyBody>,
+    ApiJson(body): ApiJson<ClarifyBody>,
 ) -> ApiResult<(StatusCode, Json<Value>)> {
     let a = actor(&s, &ctx).await?;
     let aid: ActionId = parse_id(&id, "action", &ctx)?;

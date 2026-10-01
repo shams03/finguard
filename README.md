@@ -127,6 +127,7 @@ make dev-db && make test       # unit + DB integration tests (mock providers, of
 make lint                      # rustfmt + clippy -D warnings
 make test-live                 # OPTIONAL live provider smoke tests; skip cleanly without keys
 cd apps/web && npm run build   # typecheck + production build
+node scripts/ui-smoke.mjs       # drives the real UI in headless Chrome (backend + `npm run dev` running)
 ```
 
 Highlights: money & state machine (domain); every hard rule and policy branch; idempotency (same key → one execution, different payload → conflict); confirmation (exact action, expiry, replay, tampered payload); **concurrency** (₱10,000 balance + two ₱8,000 transfers → exactly one succeeds); Jev failure matrix (timeout/429/5xx/invalid); Groq failure matrix (incl. invalid structured output); prompt-injection; append-only/balanced-ledger database triggers; redaction.

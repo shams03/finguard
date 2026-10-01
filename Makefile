@@ -12,7 +12,7 @@ frontend:
 test:
 	cargo test --workspace
 test-live:
-	cargo test -p finguard-jev -p finguard-groq --features live -- --ignored --nocapture
+	cargo test -p finguard-jev -p finguard-groq -- --ignored --nocapture
 lint:
 	cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings
 reset-demo:
