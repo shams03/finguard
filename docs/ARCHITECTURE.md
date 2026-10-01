@@ -97,7 +97,7 @@ Order of rules in `policy::decide::stage_one` (first match wins):
 1. **Hard policy block** → `Block` (no Jev, no Groq).
 2. **Required Jev unavailable** (money movement) → `ManualReview` (fail closed).
 3. **Incomplete action** → escalate (`MissingInformation`) → clarification.
-4. **Severe signals** → `ManualReview`, or `Block` if both Jev scores are extreme. Includes a *model-free* rule: new recipient + amount ≥ 5× the usual maximum + unfamiliar device/location.
+4. **Severe signals** → `ManualReview` (risk evidence can hold an action for a human but never hard-blocks it; only hard policy blocks). Includes a *model-free* rule: new recipient + amount ≥ 5× the usual maximum + unfamiliar device/location.
 5. **Low confidence / insufficient context / intent mismatch** → escalate.
 6. Otherwise the tool's base decision: confirmation for sensitive tools (always for transfers), execute for read-only.
 

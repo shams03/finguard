@@ -33,6 +33,19 @@ async fn live_jev_returns_a_valid_assessment() {
     };
     let a = p.assess(&ctx).await.expect("live Jev call failed");
     println!("{:#?}", a.provider_metadata);
+    println!(
+        "intent={:?}\ncontext={:?}",
+        a.intent_alignment, a.context_sufficient
+    );
+    println!(
+        "anomaly={:?}\nrecipient={:?}",
+        a.behavioral_anomaly
+            .as_ref()
+            .map(|s| (s.score, s.confidence, &s.probabilities)),
+        a.recipient_risk
+            .as_ref()
+            .map(|s| (s.score, s.confidence, &s.probabilities))
+    );
     println!("overall_confidence = {:.2}", a.overall_confidence);
     assert!((0.0..=1.0).contains(&a.overall_confidence));
     assert!(a.behavioral_anomaly.is_some());

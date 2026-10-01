@@ -47,10 +47,10 @@ pub fn questions(ctx: &RiskContext) -> Value {
         let def = match id {
             INTENT_ALIGNMENT => json!({
                 "type": "noul",
-                "instructions": "Does the proposed financial action clearly match the user's stated request? Compare `user_request` with `proposed_action` only.",
+                "instructions": "Compare `user_request` with `proposed_action`. The proposed action is the system's structured reading of the request. Answer true when the request asks for the kind of action, and (if the request states one) the amount, that `proposed_action` describes; differences in wording, or the request naming a person where `proposed_action` only says \"known recipient\", are NOT mismatches.",
                 "criteria": {
-                    "true": "The proposed action is exactly what the user asked for",
-                    "false": "The proposed action differs from, or goes beyond, what the user asked for"
+                    "true": "The proposed action is what the request asks for",
+                    "false": "The proposed action is a different kind of action, a different amount, or goes beyond what the request asks for"
                 }
             }),
             BEHAVIORAL_ANOMALY => json!({

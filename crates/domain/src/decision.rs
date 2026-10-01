@@ -88,8 +88,6 @@ pub struct HardPolicyReport {
 #[serde(tag = "kind", content = "detail", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum BlockReason {
     HardPolicy(HardPolicyReason),
-    /// Jev and deterministic signals agree the request is extreme.
-    SevereRisk,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

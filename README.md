@@ -76,7 +76,7 @@ All model calls originate from the Rust backend. The browser only ever talks to 
 | `DATABASE_MAX_CONNECTIONS` | Pool size | `10` |
 | `DATABASE_STATEMENT_CACHE` | `0` only for Supabase *transaction* pooler | unset |
 | `JEVSTATION_API_KEY`, `JEVSTATION_BASE_URL`, `JEV_MODEL`, `JEV_TIMEOUT_MS` | Jev | key empty |
-| `JEV_DEFAULT_CONFIDENCE_THRESHOLD` + `JEV_THRESHOLD_{READ_ONLY,REVERSIBLE,MONEY_MOVEMENT,HIGH_IMPACT}` | confidence thresholds (demo values) | 0.85 / 0.70 / 0.80 / 0.90 / 0.95 |
+| `JEV_DEFAULT_CONFIDENCE_THRESHOLD` + `JEV_THRESHOLD_{READ_ONLY,REVERSIBLE,MONEY_MOVEMENT,HIGH_IMPACT}` | confidence thresholds (demo values) | 0.65 / 0.50 / 0.60 / 0.70 / 0.80 |
 | `GROQ_API_KEY`, `GROQ_BASE_URL`, `GROQ_MODEL`, `GROQ_TIMEOUT_MS`, `GROQ_STRICT_SCHEMA` | Groq | `openai/gpt-oss-20b` |
 | `INTENT_PARSER` | `deterministic` \| `groq` | `deterministic` |
 | `DECISION_PROVIDER` | `mock` \| `jev` | `mock` |
@@ -95,9 +95,9 @@ Secrets are wrapped in a `Secret<T>` type (Debug prints `[REDACTED]`), never sen
 
 ## How confidence escalation works
 
-Each risk class has a threshold (`ReadOnly 0.70`, `Reversible 0.80`, `MoneyMovement 0.90`, `HighImpact 0.95`). Overall confidence is the **weakest link** of the answers Jev returned. Below the threshold the system **escalates for extra handling** — a Groq clarification analysis — it does **not** let the second model decide. The user answers, a **new** action is created, and policy runs again from scratch. Even at 99% confidence every transfer still needs explicit confirmation.
+Each risk class has a threshold (`ReadOnly 0.50`, `Reversible 0.60`, `MoneyMovement 0.70`, `HighImpact 0.80`). Overall confidence is the **weakest link** of the answers Jev returned. Below the threshold the system **escalates for extra handling** — a Groq clarification analysis — it does **not** let the second model decide. The user answers, a **new** action is created, and policy runs again from scratch. Even at 99% confidence every transfer still needs explicit confirmation.
 
-> These thresholds are demo parameters. In production they must be calibrated on representative historical evaluation data with asymmetric error costs.
+> These thresholds are demo parameters chosen from a small live study against Jev ([`docs/research/calibration.md`](docs/research/calibration.md)). My first guess (0.90 for money movement) would have escalated *every* normal transfer, because Jev's confidence for a healthy request is ~0.8. In production they must be calibrated on representative historical evaluation data with asymmetric error costs.
 
 ## Demo scenarios
 

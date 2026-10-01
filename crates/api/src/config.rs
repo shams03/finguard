@@ -105,7 +105,7 @@ impl Config {
 
     pub fn from_env() -> Result<Self, String> {
         let db_url = var("DATABASE_URL").ok_or("DATABASE_URL is required")?;
-        let default_threshold: f64 = parse("JEV_DEFAULT_CONFIDENCE_THRESHOLD")?.unwrap_or(0.85);
+        let default_threshold: f64 = parse("JEV_DEFAULT_CONFIDENCE_THRESHOLD")?.unwrap_or(0.65);
         let d = ConfidenceThresholds::default();
         let thresholds = ConfidenceThresholds {
             default: default_threshold,

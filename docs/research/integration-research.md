@@ -38,6 +38,9 @@ Switch with `JEVSTATION_BASE_URL`. The adapter detects the envelope by the prese
 * Rate limiting: HTTP 429 with `Retry-After`; retry 429/5xx/529 with exponential backoff. Official SDK defaults: 10 s timeout/attempt, 2 retries, backoff 0.5 s→5 s.
 * Streaming: none. Latency: not in the official response; JevStation returns `latency_ms`. We **always measure latency client-side** and prefer our measurement.
 
+### Observed live behaviour (2026-10-01)
+See [`calibration.md`](calibration.md). Highlights: JevStation limits are 10 requests/minute and a daily cap per key; a batched 4-question call takes ≈1.4–4.2 s and costs 1 credit; the response envelope and `credits`/`latency_ms` fields match the documentation; Noul answers carry no confidence (derived by us).
+
 ### MCP (development aid only — not a runtime dependency)
 No official TypeSafe MCP server was found. JevStation's server:
 

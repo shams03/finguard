@@ -31,9 +31,9 @@ Result: `HardPolicyResult::Pass | Block(reason)` — the **first** failing check
 ## 7.2 Thresholds (`thresholds.rs`)
 
 ```
-ReadOnly 0.70   Reversible 0.80   MoneyMovement 0.90   HighImpact 0.95   (default 0.85)
+ReadOnly 0.50   Reversible 0.60   MoneyMovement 0.70   HighImpact 0.80   (default 0.65)
 ```
-Configurable by env. **Demo values, not validated.** In production they must be calibrated on representative historical evaluation data with *asymmetric error costs*: wrongly allowing a fraudulent transfer is much more costly than wrongly escalating a legitimate one, so the threshold sits where expected cost is minimal, not at 50%.
+Configurable by env. **Demo values, not validated** — and *empirically adjusted*: my first guess for money movement was 0.90, but the live Jev study ([`research/calibration.md`](../research/calibration.md)) showed healthy requests score ≈0.76–0.88 on this weakest-link metric, so 0.90 would have escalated every normal transfer. Lesson: you cannot pick thresholds from intuition about a model's scale; measure. In production they must be calibrated on representative historical evaluation data with *asymmetric error costs*: wrongly allowing a fraudulent transfer is much more costly than wrongly escalating a legitimate one, so the threshold sits where expected cost is minimal, not at 50%.
 
 ## 7.3 The final decision (`decide.rs`)
 
@@ -49,7 +49,7 @@ Each returns `Option<Stage>`; the first `Some` wins; otherwise `base_decision(to
 | 1 | hard policy failed | `Block(HardPolicy(reason))` |
 | 2 | Jev required but failed (any `DecisionProviderError`) | `ManualReview` — **fail closed** |
 | 3 | draft incomplete | escalate (`MissingInformation`) → clarification |
-| 4 | severe signals | `ManualReview`; `Block(SevereRisk)` if *both* Jev scores ≥ 3.5/4 |
+| 4 | severe signals | `ManualReview` — risk evidence alone never hard-blocks |
 | 5 | overall confidence < threshold, or `context_sufficient` < 0.5, or `intent_alignment` < 0.5 | escalate |
 | — | otherwise | confirmation (transfers, freezes) or execute (read-only) |
 
@@ -84,7 +84,7 @@ Because *low confidence* is information about **the situation** (ambiguous, miss
 ## 7.6 Tests to read
 
 `crates/policy/src/hard.rs` (tests): normal pass, insufficient funds, invalid amounts, exact balance, absolute limit, unauthorised account, no actor / no permission, blocked/unknown recipient, incomplete draft skips, frozen card idempotent.
-`crates/policy/src/decide.rs` (tests): read-only executes w/o Jev; freeze needs confirmation; **transfer needs confirmation even at 99%**; hard block wins regardless of a glowing assessment; below/above threshold; per-class thresholds; Jev unavailable (fails closed for money, not for reads); high anomaly → review with reasons; deterministic signals; extreme → block; known vs new recipient; missing amount escalates; escalation can clarify/review but never execute; provider failure fails safe.
+`crates/policy/src/decide.rs` (tests): read-only executes w/o Jev; freeze needs confirmation; **transfer needs confirmation even at 99%**; hard block wins regardless of a glowing assessment; below/above threshold; per-class thresholds; Jev unavailable (fails closed for money, not for reads); high anomaly → review with reasons; deterministic signals; extreme model scores → review (not block); known vs new recipient; missing amount escalates; escalation can clarify/review but never execute; provider failure fails safe.
 
 ## 7.7 Mutation exercises
 

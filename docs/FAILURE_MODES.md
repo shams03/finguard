@@ -10,6 +10,7 @@ For each failure: what happens, and whether the system **retries**, **fails clos
 | **Groq rejects strict schema** | Degrades once to JSON mode; server-side validation still applies. | retries (degraded) |
 | **Jev unavailable** (timeout / 429 / 5xx / invalid response) | Bounded retry for transient errors. If it still fails: read-only actions continue (Jev not required); **money movement → `MANUAL_REVIEW`** — it never silently bypasses risk policy. Failure recorded in `jev_evaluations` + `jev_failed` event. | fails closed |
 | **Jev 401 / 4xx** | Not retried (deterministic failures). Same fail-closed result. | fails closed |
+| **Jev rate limit exhausted** (JevStation: 10 req/min and a daily cap per key — observed live) | `RateLimited` is returned immediately when `Retry-After` is long; money movement fails closed to manual review, reads unaffected. Use the mock provider for repeated demos. | fails closed |
 | **Jev low confidence** | Not a failure: escalation for extra handling (clarification); the second model never approves. | clarifies |
 | **PostgreSQL unavailable** | Requests error with `INTERNAL_ERROR` (no details leaked); `/health` reports `degraded` (503). No partial state: every mutation is one transaction. | fails closed |
 | **Response lost after commit** | Client retries with the same `Idempotency-Key`: the stored result is returned (`replayed: true`); nothing executes twice. Without a key, a second confirm gets `CONFIRMATION_INVALID` (single-use) and the client can `GET /actions/:id` to see the outcome. | returns existing result |

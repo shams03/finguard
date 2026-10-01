@@ -1,5 +1,7 @@
 # 90-second demo script
 
+> **Live provider limits:** JevStation allows ~10 calls/minute and a daily cap per key, so use the mock provider for rehearsals and switch to live only for the final run (each transfer proposal = 1 Jev call).
+
 Setup (before you start): `make dev-db && make backend` in one terminal, `make frontend` in another. Open <http://localhost:5173>. For the full effect use real providers (`DECISION_PROVIDER=jev`, `INTENT_PARSER=groq`, `ESCALATION_ANALYZER=groq`); the demo also works fully offline with mocks.
 
 | Time | Say | Do | Point out |

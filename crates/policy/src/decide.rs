@@ -6,6 +6,8 @@
 //! ```text
 //!  hard block?  ->  Jev unavailable?  ->  incomplete?  ->  severe signals?
 //!      -> low confidence / ambiguity? -> ESCALATE (stage 1 ends here)
+//!
+//! Only hard policy blocks. Risk evidence yields at most `ManualReview`.
 //!      -> base decision for the tool (confirmation / execute)
 //! ```
 //!
@@ -26,8 +28,6 @@ use serde::{Deserialize, Serialize};
 /// A Jev anomaly / recipient score at or above this level (0..=4 rubric) is
 /// treated as "highly unusual" and held for manual review.
 pub const SEVERE_SCORE: f64 = 3.0;
-/// Both scores at or above this level ("extreme") are blocked outright.
-pub const EXTREME_SCORE: f64 = 3.5;
 /// Transfer this many times the user's usual maximum counts as far above normal.
 pub const FAR_ABOVE_TYPICAL_RATIO: f64 = 5.0;
 /// Recipients younger than this are "new".
@@ -226,31 +226,23 @@ fn context_reasons(s: &DeterministicSignals) -> Vec<PolicyReason> {
     out
 }
 
-/// Rule: severe signals. Extreme on both Jev scores blocks; anything else
-/// severe is held for manual review. Jev can only push toward caution.
+/// Rule: severe signals. Risk evidence (model or deterministic) can only ever
+/// **hold an action for a human**; it never hard-blocks on its own. Blocking is
+/// reserved for hard policy (facts and invariants). Rationale: Jev is advisory,
+/// and a legitimate customer on a new phone must reach a reviewer rather than a
+/// dead end. (Live Jev scored the headline "suspicious" scenario 3.8/4 on both
+/// dimensions; an auto-block rule on "extreme" would have fired every time.)
 fn rule_severe(input: &PolicyInput) -> Option<Stage> {
     let mut severe = deterministic_severe_signals(input.signals);
-    let mut extreme = false;
     if let JevStatus::Assessed(a) = input.jev {
         severe.extend(jev_severe_signals(a));
-        extreme = matches!((&a.behavioral_anomaly, &a.recipient_risk),
-            (Some(b), Some(r)) if b.score >= EXTREME_SCORE && r.score >= EXTREME_SCORE);
     }
     if severe.is_empty() {
         return None;
     }
     let mut reasons = severe;
     reasons.extend(context_reasons(input.signals));
-    Some(if extreme {
-        done(
-            PolicyDecision::Block {
-                reason: BlockReason::SevereRisk,
-            },
-            reasons,
-        )
-    } else {
-        done(PolicyDecision::ManualReview, reasons)
-    })
+    Some(done(PolicyDecision::ManualReview, reasons))
 }
 
 /// Rule: low confidence or semantic doubt triggers escalation (not trust).
@@ -592,9 +584,9 @@ mod tests {
 
     #[test]
     fn threshold_is_per_risk_class() {
-        // 0.85 passes the 0.80 reversible threshold but fails the 0.90 money one.
-        let mut a = assessment(0.2, 0.2, 0.85);
-        a.overall_confidence = 0.85;
+        // 0.65 passes the 0.60 reversible threshold but fails the 0.70 money one.
+        let mut a = assessment(0.2, 0.2, 0.65);
+        a.overall_confidence = 0.65;
         let th = ConfidenceThresholds::default();
         for (tool, expect_escalation) in [
             (ActionKind::FreezeCard, false),
@@ -700,7 +692,7 @@ mod tests {
     }
 
     #[test]
-    fn extreme_on_both_scores_blocks() {
+    fn extreme_model_scores_hold_for_review_but_never_hard_block() {
         let a = assessment(3.9, 3.8, 0.97);
         let s = run(
             ActionKind::TransferFunds,
@@ -711,9 +703,8 @@ mod tests {
         );
         assert_eq!(
             final_decision(s),
-            PolicyDecision::Block {
-                reason: BlockReason::SevereRisk
-            }
+            PolicyDecision::ManualReview,
+            "AI evidence alone can hold an action for a human, never hard-block it"
         );
     }
 

@@ -47,6 +47,8 @@
 * **Vendor surfaces change; contracts don't.** Jev had two HTTP surfaces (TypeSafe vs JevStation) with different envelopes; Groq's Llama ids were past shutdown while docs conflicted. Config + an adapter that normalises + dated research notes beat remembered APIs.
 * **`now()` vs `clock_timestamp()`** — Postgres' `now()` is the *transaction start*; for an audit trail inside one transaction you want wall-clock time.
 * **Deferred constraint triggers** make "this ledger transaction must balance" a database guarantee at COMMIT.
+* **Measure before choosing thresholds.** My first guess (0.90) would have escalated every normal transfer; a 20-call live study showed healthy requests score ≈0.8 on the weakest-link metric. I also learned a model's hedging depends on question wording (0.83 → 0.98 'yes' after clarifying the criteria).
+* **Advisory means advisory.** A rule that auto-blocked on 'extreme' model scores fired on the headline demo with the real model; AI evidence now only holds for review, only hard policy blocks.
 * **Lock strength and order matter.** `ORDER BY … FOR UPDATE` doesn't guarantee lock order, and `FOR UPDATE` collides with FK-check locks; `FOR NO KEY UPDATE` on one contended row fixed it.
 * **`TRUNCATE` bypasses row-level triggers** — convenient for demo reset, dangerous in production; hence the env guard.
 * **Strict structured outputs guarantee shape, not truth** — you still need grounding.
