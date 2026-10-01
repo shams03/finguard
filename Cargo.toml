@@ -1,0 +1,25 @@
+[workspace]
+resolver = "3"
+members = ["crates/domain", "crates/policy", "crates/persistence", "crates/jev", "crates/groq", "crates/agent", "crates/api"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+async-trait = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "time", "sync"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+sha2 = "0.11"
+hex = "0.4"
+tracing = "0.1"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "time", "migrate", "macros", "json"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

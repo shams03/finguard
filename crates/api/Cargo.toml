@@ -1,0 +1,40 @@
+[package]
+name = "finguard-api"
+version.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "finguard_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "finguard-api"
+path = "src/main.rs"
+
+[dependencies]
+finguard-domain = { path = "../domain" }
+finguard-policy = { path = "../policy" }
+finguard-persistence = { path = "../persistence" }
+finguard-jev = { path = "../jev" }
+finguard-groq = { path = "../groq" }
+finguard-agent = { path = "../agent" }
+axum = "0.8"
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7", features = ["trace", "cors", "request-id", "limit"] }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid.workspace = true
+time.workspace = true
+sqlx.workspace = true
+dotenvy = "0.15"
+
+[dev-dependencies]
+http-body-util = "0.1"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

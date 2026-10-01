@@ -1,0 +1,15 @@
+[package]
+name = "finguard-policy"
+version.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+finguard-domain = { path = "../domain" }
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+uuid.workspace = true
