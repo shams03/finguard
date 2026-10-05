@@ -8,3 +8,4 @@ dist
 *.log
 .claude/settings.local.json
 .claude/
+apps/video/out/

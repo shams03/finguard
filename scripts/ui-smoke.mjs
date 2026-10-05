@@ -70,7 +70,10 @@ try {
   await typeInto("#cmd", "Send ₱40,000 to Alex."); await must(await clickText("Send"), "send"); await waitFor("Not enough funds"); await waitFor("0 AI calls"); await shot("09-insufficient");
 
   // how it works
-  await goto("#/how"); await waitFor("Follow a request"); await sleep(1800); await shot("10-how");
+  await goto("#/how"); await waitFor("Follow a request"); await sleep(1800);
+  const vd = await js(`(async () => { const v=document.querySelector('video'); if(!v) return -1; for (let i=0;i<40 && v.readyState<1;i++) await new Promise(r=>setTimeout(r,150)); return v.readyState>=1 ? v.duration : -2; })()`);
+  console.log("explainer video duration (s):", vd); if (!(vd > 60)) throw new Error("explainer video did not load in the How page");
+  await shot("10-how");
   await must(await clickText("₱40,000 with only ₱20,000", "[role=tab]"), "flow scenario"); await sleep(1200);
   await js(`document.querySelector('[aria-label^="Safety rules"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`); await waitFor("Facts only"); await shot("11-how-node");
 

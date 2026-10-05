@@ -6,6 +6,15 @@ import type { Tone } from "./ui";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** Backend reasons can be codes (e.g. HARD_POLICY_BLOCK/INSUFFICIENT_FUNDS); show the failed rule in words instead. */
+function reasonText(v: ActionView, r: { code: string; detail: string }): string {
+  if (r.code === "HARD_POLICY_BLOCK") {
+    const f = v.explorer.hard_policy?.checks.find((c) => c.status === "FAIL");
+    if (f) return `Blocked by a safety rule — ${f.name}: ${f.detail}.`;
+  }
+  return cap(r.detail);
+}
+
 function YesNo({ q, yes, confidence }: { q: string; yes: number; confidence: number }) {
   return (
     <div className="space-y-1.5">
@@ -113,8 +122,8 @@ export function Explorer({ view }: { view: ActionView }) {
           </Collapsible>
         )}
 
-        <Collapsible anchor="sec-decision" title={<>4 · Final decision by <Term k="policy" /></>} tone={view.policy_decision === "BLOCK" ? "bad" : view.policy_decision === "REQUIRE_CONFIRMATION" || view.policy_decision === "EXECUTE" ? "ok" : "warn"} summary={view.decision_reasons[0] ? cap(view.decision_reasons[0].detail) : "Pending"} open={isOpen("decision", true)} onOpenChange={toggle("decision")}>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-200">{view.decision_reasons.map((r) => <li key={r.code}>{cap(r.detail)}</li>)}</ul>
+        <Collapsible anchor="sec-decision" title={<>4 · Final decision by <Term k="policy" /></>} tone={view.policy_decision === "BLOCK" ? "bad" : view.policy_decision === "REQUIRE_CONFIRMATION" || view.policy_decision === "EXECUTE" ? "ok" : "warn"} summary={view.decision_reasons[0] ? reasonText(view, view.decision_reasons[0]) : "Pending"} open={isOpen("decision", true)} onOpenChange={toggle("decision")}>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-200">{view.decision_reasons.map((r) => <li key={r.code}>{reasonText(view, r)}</li>)}</ul>
           <p className="mt-3 text-xs text-slate-400">Decided by ordinary, tested code ({ex.policy_version}). Models only supplied evidence. Every transfer needs your approval, even at 99% confidence.</p>
         </Collapsible>
       </div>

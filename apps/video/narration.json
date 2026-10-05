@@ -1,0 +1,48 @@
+{
+  "voice": "Samantha",
+  "rate": 172,
+  "scenes": [
+    { "id": "hook", "chip": "The question", "sentences": [
+      "AI agents can now move money.",
+      "But should a chatbot be allowed to press the button?"
+    ]},
+    { "id": "problem", "chip": "The problem", "sentences": [
+      "Left alone, an A I can make things up.",
+      "It can be tricked by a single sentence.",
+      "A retry can pay the same bill twice.",
+      "And two requests can spend the same money."
+    ]},
+    { "id": "principle", "chip": "The idea", "sentences": [
+      "Fin Guard splits the work into three roles.",
+      "Models propose.",
+      "Policy decides.",
+      "Executors execute."
+    ]},
+    { "id": "journey", "chip": "One request, end to end", "sentences": [
+      "Let's follow one request. You type: send two thousand pesos to Alex.",
+      "Language becomes a typed action. Only three tools exist, so nothing can invent a fourth.",
+      "Plain rules check the facts first. No A I is involved.",
+      "Then a risk model rates four narrow questions with probabilities. Evidence, never permission.",
+      "Policy decides. Every transfer needs your approval, even at ninety nine percent confidence.",
+      "One database transaction locks the account, re-checks the balance, and writes two balanced ledger entries.",
+      "Every step lands in an audit trail, so the whole story can be replayed."
+    ]},
+    { "id": "branches", "chip": "Other paths", "sentences": [
+      "Not every request takes that path.",
+      "A balance check needs no A I at all.",
+      "A vague request gets a question instead of a guess.",
+      "A suspicious one is held for review.",
+      "And if the money isn't there, it stops before any A I is called."
+    ]},
+    { "id": "guarantees", "chip": "Guarantees", "sentences": [
+      "Retries are safe: the same key returns the same result.",
+      "Two transfers can't spend the same money.",
+      "And if the risk model goes down, the system fails closed instead of skipping the check."
+    ]},
+    { "id": "outro", "chip": "FinGuard", "sentences": [
+      "Models propose. Policy decides. Executors execute.",
+      "That's Fin Guard: A I you can reason about."
+    ]}
+  ],
+  "captionFix": { "A I": "AI", "Fin Guard": "FinGuard", "ninety nine": "99", "two thousand pesos": "₱2,000" }
+}

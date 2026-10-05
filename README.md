@@ -49,7 +49,7 @@ cd apps/web && npm install && npm run dev     # http://localhost:5173
 
 Or with the Makefile: `make dev-db`, `make backend`, `make frontend`, `make test`.
 
-Open <http://localhost:5173> → **Dashboard** → click **Normal Transfer**, then open the **Trace Viewer**.
+Open <http://localhost:5173>. Start with **Overview → Start the guided demo** (five short steps), or open **How it works** for an animated flowchart of how a request travels plus a narrated ~2 minute explainer video. Demo tools (outage simulation, reset) live under **Demo tools** in the header.
 
 ### Using the real providers
 
@@ -117,6 +117,7 @@ Full 90-second script: [`docs/DEMO.md`](docs/DEMO.md).
 ## Documentation
 
 * **[`docs/GUIDE.md`](docs/GUIDE.md)** — the learning guide: from zero to one, then one to a hundred.
+* **Explainer video** — `apps/web/public/finguard-explainer.mp4` (rendered from code by [`apps/video`](apps/video/README.md): `cd apps/video && npm run video`).
 * [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/SECURITY.md`](docs/SECURITY.md) · [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md) · [`docs/DEMO.md`](docs/DEMO.md)
 * [`docs/adr/`](docs/adr/) — architecture decision records · [`docs/research/`](docs/research/) — integration research (dated)
 

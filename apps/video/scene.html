@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>FinGuard explainer</title>
+<style>
+  :root { --emerald:#34d399; --sky:#38bdf8; --violet:#a78bfa; --amber:#fbbf24; --rose:#fb7185; --ink:#070b16; --panel:#0d1424; --line:#24324f; --text:#e2e8f0; --mute:#94a3b8; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--ink); }
+  body { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Inter, system-ui, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; background: radial-gradient(1100px 600px at 20% 0%, #101a36 0%, transparent 60%), radial-gradient(900px 520px at 100% 100%, #0b2a26 0%, transparent 55%), var(--ink); }
+  #grid { position: absolute; inset: -80px; background-image: linear-gradient(rgba(148,163,184,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.07) 1px, transparent 1px); background-size: 64px 64px; }
+  .abs { position: absolute; will-change: transform, opacity; }
+  .card { position: absolute; background: linear-gradient(180deg, rgba(20,30,54,.92), rgba(13,20,36,.92)); border: 1.5px solid var(--line); border-radius: 22px; box-shadow: 0 18px 50px -20px rgba(0,0,0,.7); }
+  .t { position: absolute; white-space: nowrap; line-height: 1.15; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .chip { position: absolute; padding: 6px 14px; border-radius: 999px; font-size: 20px; font-weight: 600; border: 1.5px solid; white-space: nowrap; }
+  #chapter { position: absolute; left: 44px; top: 34px; font-size: 18px; letter-spacing: 3px; font-weight: 700; color: var(--mute); text-transform: uppercase; display: flex; gap: 12px; align-items: center; }
+  #chapter i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--emerald); }
+  #brand { position: absolute; right: 44px; top: 28px; font-size: 22px; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 10px; }
+  #brand b { width: 30px; height: 30px; border-radius: 9px; background: var(--emerald); display: inline-block; }
+  #caption { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; }
+  #caption span { display: inline-block; max-width: 1060px; padding: 10px 24px; border-radius: 14px; background: rgba(5,8,16,.78); font-size: 30px; font-weight: 600; line-height: 1.3; color: #f8fafc; }
+  #bar { position: absolute; left: 0; bottom: 0; height: 5px; background: var(--emerald); }
+</style></head>
+<body><div id="stage">
+  <div id="grid"></div>
+  <div id="scenes"></div>
+  <div id="chapter"><i></i><span></span></div>
+  <div id="brand"><b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04130e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin:5px"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/></svg></b>FinGuard</div>
+  <div id="caption"><span></span></div>
+  <div id="bar"></div>
+</div>
+<script src="scene.js"></script>
+</body></html>

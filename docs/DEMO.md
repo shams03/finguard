@@ -1,4 +1,6 @@
-# 90-second demo script
+# Demo script (about 90 seconds live)
+
+> The app also explains itself: **How it works** has an animated flowchart of the request path and a narrated ~2 minute video (`apps/web/public/finguard-explainer.mp4`). The **Overview → Guided demo** walks a newcomer through five steps and remembers progress.
 
 > **Live provider limits:** JevStation allows ~10 calls/minute and a daily cap per key, so use the mock provider for rehearsals and switch to live only for the final run (each transfer proposal = 1 Jev call).
 

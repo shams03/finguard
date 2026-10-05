@@ -1,0 +1,11 @@
+{
+  "name": "finguard-video",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Deterministic explainer-video renderer: HTML scenes as pure functions of time -> Chrome frames -> ffmpeg, with macOS TTS narration.",
+  "scripts": {
+    "video": "node render.mjs",
+    "preview": "node render.mjs --preview"
+  }
+}

@@ -11,7 +11,6 @@ function Video() {
       ) : (
         <video controls preload="metadata" poster="/finguard-explainer-poster.jpg" className="aspect-video w-full" onError={() => setFailed(true)}>
           <source src="/finguard-explainer.mp4" type="video/mp4" onError={() => setFailed(true)} />
-          <track kind="captions" src="/finguard-explainer.vtt" srcLang="en" label="English" default />
         </video>
       )}
     </div>
@@ -45,7 +44,7 @@ export function How({ onGo }: { onGo: (to: string) => void }) {
         <p className="mt-2 max-w-3xl text-slate-300">Every request crosses three zones with strictly different powers: <b className="text-violet-300">models propose</b>, <b className="text-emerald-300">policy decides</b>, <b className="text-sky-300">executors execute</b>. Watch a request travel through them, then click any box to see who decides there and what happens if it fails.</p>
       </section>
 
-      <Card title="Watch it in 90 seconds" right={<span className="text-xs text-slate-400">narrated · with captions</span>}><Video /></Card>
+      <Card title="Watch it in under two minutes" right={<span className="text-xs text-slate-400">narrated · captions burned in</span>}><Video /></Card>
 
       <Card title="Follow a request" right={<Button size="sm" tone="ghost" icon="play" onClick={() => onGo("#/try")}>Try it for real</Button>}>
         <FlowChart />
