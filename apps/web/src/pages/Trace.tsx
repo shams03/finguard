@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import type { ActionListItem, TraceEvent, TraceStage, TraceView } from "../types";
-import { Bar, Card, Json, Mono, Pill, Spinner, fmtMs, pct, statusTone } from "./ui";
-import type { Tone } from "./ui";
+import { Bar, Button, Card, Json, Mono, Pill, Spinner, Term, fmtMs, pct, statusLabel, statusTone } from "../components/ui";
+import type { Tone } from "../components/ui";
 
 const STAGE_TONE: Record<TraceStage["status"], Tone> = { passed: "ok", warning: "warn", blocked: "bad", skipped: "mute", executed: "exec", pending: "info" };
 const CAT_DOT: Record<string, string> = {
@@ -15,7 +15,7 @@ const clock = (iso: string) => {
   return `${d.toLocaleTimeString("en-GB")}.${String(d.getMilliseconds()).padStart(3, "0")}`;
 };
 
-export function TraceViewer({ actionId, onSelect }: { actionId: string | null; onSelect: (id: string) => void }) {
+export function Trace({ actionId, onSelect, onBack }: { actionId: string | null; onSelect: (id: string) => void; onBack: () => void }) {
   const [trace, setTrace] = useState<TraceView | null>(null);
   const [list, setList] = useState<ActionListItem[]>([]);
   const [sel, setSel] = useState<TraceEvent | null>(null);
@@ -31,11 +31,11 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
   if (!actionId) {
     return (
       <Card title="Trace viewer">
-        <p className="mb-3 text-sm text-slate-400">Pick an action to reconstruct its lifecycle from the append-only audit log.</p>
+        <p className="mb-3 text-sm text-slate-300">A <Term k="trace" /> reconstructs one request from the append-only audit log: what was asked, checked, assessed, approved and executed — with timings. Pick a request:</p>
         <ul className="space-y-1.5">
           {list.map((h) => (
             <li key={h.action_id}><button onClick={() => onSelect(h.action_id)} className="flex w-full items-center justify-between rounded-lg border border-slate-800 px-3 py-2 text-left text-sm hover:border-slate-600">
-              <span>{h.user_request}</span><Pill tone={statusTone(h.status)}>{h.status.replaceAll("_", " ")}</Pill></button></li>
+              <span>{h.user_request}</span><Pill tone={statusTone(h.status)}>{statusLabel(h.status)}</Pill></button></li>
           ))}
           {list.length === 0 && <li className="text-sm text-slate-500">No actions yet. Run something in the Agent Console.</li>}
         </ul>
@@ -51,7 +51,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
 
   return (
     <div className="space-y-4">
-      <Card title="Trace" right={<Pill tone={statusTone(trace.status)}>{trace.status.replaceAll("_", " ")}</Pill>}>
+      <Card title="Trace" right={<div className="flex items-center gap-2"><Pill tone={statusTone(trace.status)}>{statusLabel(trace.status)}</Pill><Button tone="ghost" size="sm" onClick={onBack}>← Back to the request</Button></div>}>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-4">
           <div><dt className="text-xs text-slate-400">Trace</dt><dd><Mono>{trace.trace_id}</Mono></dd></div>
           <div><dt className="text-xs text-slate-400">Action</dt><dd><Mono>{trace.action_id}</Mono></dd></div>
@@ -60,7 +60,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
           <div><dt className="text-xs text-slate-400">Started</dt><dd><Mono>{clock(trace.started_at)}</Mono></dd></div>
           <div><dt className="text-xs text-slate-400">Completed</dt><dd><Mono>{trace.completed_at ? clock(trace.completed_at) : "—"}</Mono></dd></div>
           <div><dt className="text-xs text-slate-400">Total</dt><dd><Mono>{fmtMs(trace.total_duration_ms)}</Mono></dd></div>
-          <div><dt className="text-xs text-slate-400">Versions</dt><dd className="text-[11px] text-slate-400">{Object.values(trace.versions).join(" · ")}</dd></div>
+          <div><dt className="text-xs text-slate-400">Versions</dt><dd className="text-xs text-slate-400">{Object.values(trace.versions).join(" · ")}</dd></div>
         </dl>
         {trace.parent_action_id && <p className="mt-2 text-xs text-slate-500">Follows superseded action <button className="underline" onClick={() => onSelect(trace.parent_action_id!)}>{trace.parent_action_id}</button></p>}
       </Card>
@@ -70,7 +70,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
           {trace.stages.map((s, i) => (
             <li key={s.key} className="flex items-center gap-2">
               <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2" title={s.detail}>
-                <div className="text-[10px] uppercase tracking-wider text-slate-500">{s.label}</div>
+                <div className="text-xs uppercase tracking-wider text-slate-500">{s.label}</div>
                 <Pill tone={STAGE_TONE[s.status]}>{s.status}</Pill>
               </div>
               {i < trace.stages.length - 1 && <span className="text-slate-600">→</span>}
@@ -80,7 +80,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_24rem]">
-        <Card title="Timeline" right={<span className="text-[11px] text-slate-500">click an event for safe metadata</span>}>
+        <Card title="Timeline" right={<span className="text-xs text-slate-500">click an event for safe metadata</span>}>
           <ol className="relative space-y-0.5 border-l border-slate-800 pl-4">
             {trace.events.map((e) => (
               <li key={e.seq}>
@@ -90,7 +90,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
                     <span className="text-sm text-slate-100">{e.label}</span>
                     <Mono className="text-slate-500">{clock(e.occurred_at)}</Mono>
                   </div>
-                  <div className="flex gap-3 text-[11px] text-slate-500">
+                  <div className="flex gap-3 text-xs text-slate-500">
                     <span>+{e.offset_ms} ms</span>
                     {e.duration_ms != null && <span className="text-slate-300">{e.duration_ms} ms</span>}
                     {typeof e.metadata.overall_confidence === "number" && <span>Confidence: {pct(e.metadata.overall_confidence)}</span>}
@@ -129,7 +129,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
                   </dl>
                 )}
                 <Json value={sel.metadata} />
-                <p className="text-[11px] text-slate-500">Metadata is allow-listed and redacted. No secrets, headers or raw provider payloads are stored.</p>
+                <p className="text-xs text-slate-500">Metadata is allow-listed and redacted. No secrets, headers or raw provider payloads are stored.</p>
               </div>
             ) : <p className="text-sm text-slate-500">Select an event.</p>}
           </Card>
@@ -142,7 +142,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
               <Bar label="Groq escalation" value={L.groq_escalation_ms / maxLat} tone="warn" right={fmtMs(L.groq_escalation_ms)} />
               <Bar label="DB execution" value={L.db_execution_ms / maxLat} tone="info" right={fmtMs(L.db_execution_ms)} />
             </div>
-            <p className="mt-2 text-[11px] text-slate-500">External model latency vs deterministic policy vs execution.</p>
+            <p className="mt-2 text-xs text-slate-500">External model latency vs deterministic policy vs execution.</p>
           </Card>
 
           <Card title="Provider usage">
@@ -151,7 +151,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
               <li className="flex justify-between"><span className="text-slate-400">Groq input tokens</span><Mono>{trace.usage.groq_input_tokens}</Mono></li>
               <li className="flex justify-between"><span className="text-slate-400">Groq output tokens</span><Mono>{trace.usage.groq_output_tokens}</Mono></li>
             </ul>
-            <p className="mt-2 text-[11px] text-slate-500">Provider-reported usage only; no pricing is inferred.</p>
+            <p className="mt-2 text-xs text-slate-500">Provider-reported usage only; no pricing is inferred.</p>
           </Card>
         </div>
       </div>
@@ -159,7 +159,7 @@ export function TraceViewer({ actionId, onSelect }: { actionId: string | null; o
       {trace.ledger && (
         <Card title="Ledger" right={<Mono className="text-slate-500">{trace.ledger.ledger_transaction_id}</Mono>}>
           <ul className="text-sm">{trace.ledger.entries.map((e, i) => <li key={i} className="flex justify-between border-b border-slate-800 py-1 last:border-0"><span>{e.account}</span><Mono className={e.amount_minor < 0 ? "text-rose-300" : "text-emerald-300"}>{e.amount}</Mono></li>)}</ul>
-          <p className="mt-2 text-[11px] text-slate-500">Append-only, balanced to zero (enforced by a deferred database trigger).</p>
+          <p className="mt-2 text-xs text-slate-500">Append-only, balanced to zero (enforced by a deferred database trigger).</p>
         </Card>
       )}
 
