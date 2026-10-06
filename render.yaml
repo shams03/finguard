@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: finguard
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: staging # not "production": keeps the demo endpoints + first-run seeding the UI needs
+      - key: DATABASE_URL
+        sync: false # paste the Aiven URI (…?sslmode=require) in the Render dashboard
+      - key: DATABASE_MAX_CONNECTIONS
+        value: "5"
+      - key: INTENT_PARSER
+        value: deterministic # switch to groq + set GROQ_API_KEY for live language
+      - key: DECISION_PROVIDER
+        value: mock # switch to jev + set JEVSTATION_API_KEY for live risk
+      - key: ESCALATION_ANALYZER
+        value: mock

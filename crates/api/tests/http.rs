@@ -17,6 +17,7 @@ fn config(env: &str) -> Config {
         app_env: env.into(),
         bind_addr: "127.0.0.1:0".into(),
         cors_origin: "http://localhost:5173".into(),
+        web_dir: None,
         db: DbConfig {
             url: "postgres://x:y@localhost/z".into(),
             migration_url: None,
@@ -35,7 +36,7 @@ fn config(env: &str) -> Config {
 async fn app(pool: PgPool, env: &str) -> (Router, AppState) {
     seed::reset_demo(&pool, &Default::default()).await.unwrap();
     let state = build_state(Store::from_pool(pool), &config(env)).unwrap();
-    (router(state.clone(), "http://localhost:5173"), state)
+    (router(state.clone(), "http://localhost:5173", None), state)
 }
 
 async fn call(

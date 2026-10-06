@@ -94,7 +94,7 @@ async fn request_context(mut req: Request, next: Next) -> Response {
     resp
 }
 
-pub fn router(state: AppState, cors_origin: &str) -> Router {
+pub fn router(state: AppState, cors_origin: &str, web_dir: Option<&str>) -> Router {
     let cors = match HeaderValue::from_str(cors_origin) {
         Ok(origin) => CorsLayer::new()
             .allow_origin(origin)
@@ -109,7 +109,7 @@ pub fn router(state: AppState, cors_origin: &str) -> Router {
             ]),
         Err(_) => CorsLayer::new(),
     };
-    Router::new()
+    let mut app = Router::new()
         .route("/health", get(health))
         .route("/api/v1/account", get(get_account))
         .route("/api/v1/cards", get(get_cards))
@@ -129,8 +129,16 @@ pub fn router(state: AppState, cors_origin: &str) -> Router {
             "/api/v1/demo/failures/{provider}/{mode}",
             post(demo_failure),
         )
-        .fallback(not_found)
-        .layer(RequestBodyLimitLayer::new(16 * 1024))
+        .fallback(not_found);
+    // Optional: serve the built single-page app from the same origin (no CORS needed).
+    if let Some(dir) = web_dir {
+        let index = format!("{dir}/index.html");
+        app = app.fallback_service(
+            tower_http::services::ServeDir::new(dir)
+                .fallback(tower_http::services::ServeFile::new(index)),
+        );
+    }
+    app.layer(RequestBodyLimitLayer::new(16 * 1024))
         .layer(middleware::from_fn(request_context))
         .layer(cors)
         .with_state(state)

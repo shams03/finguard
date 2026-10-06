@@ -42,6 +42,8 @@ pub struct Config {
     pub app_env: String,
     pub bind_addr: String,
     pub cors_origin: String,
+    /// Directory of the built frontend; when set the API serves it too (single-container deploys).
+    pub web_dir: Option<String>,
     pub db: DbConfig,
     pub jev: Option<JevSettings>,
     pub groq: Option<GroqSettings>,
@@ -177,7 +179,11 @@ impl Config {
 
         Ok(Config {
             app_env: var("APP_ENV").unwrap_or_else(|| "development".into()),
-            bind_addr: var("BIND_ADDR").unwrap_or_else(|| "127.0.0.1:8080".into()),
+            // Hosts like Render only provide PORT and need 0.0.0.0.
+            bind_addr: var("BIND_ADDR")
+                .or_else(|| var("PORT").map(|p| format!("0.0.0.0:{p}")))
+                .unwrap_or_else(|| "127.0.0.1:8080".into()),
+            web_dir: var("WEB_DIR"),
             cors_origin: var("CORS_ORIGIN").unwrap_or_else(|| "http://localhost:5173".into()),
             db: DbConfig {
                 url: db_url,

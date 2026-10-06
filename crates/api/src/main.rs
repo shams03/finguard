@@ -76,7 +76,7 @@ async fn main() {
             std::process::exit(1);
         }
     };
-    let app = router(state, &cfg.cors_origin);
+    let app = router(state, &cfg.cors_origin, cfg.web_dir.as_deref());
     let listener = match tokio::net::TcpListener::bind(&cfg.bind_addr).await {
         Ok(l) => l,
         Err(e) => {

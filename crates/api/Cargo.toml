@@ -23,7 +23,7 @@ finguard-groq = { path = "../groq" }
 finguard-agent = { path = "../agent" }
 axum = "0.8"
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.7", features = ["trace", "cors", "request-id", "limit"] }
+tower-http = { version = "0.7", features = ["trace", "cors", "request-id", "limit", "fs"] }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
