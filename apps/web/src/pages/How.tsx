@@ -51,7 +51,7 @@ export function How({ onGo }: { onGo: (to: string) => void }) {
         </table></div>
       </Card>
 
-      <p className="text-sm text-slate-400">Terms you'll meet: <Term k="jev" />, <Term k="groq" />, <Term k="hardpolicy" />, <Term k="confidence" />, <Term k="escalation" />, <Term k="idempotency" />, <Term k="fingerprint" />, <Term k="ledger" />, <Term k="trace" />. The full written guide lives in <span className="font-mono text-slate-300">docs/GUIDE.md</span>.</p>
+      <p className="text-sm text-slate-400">Terms you'll meet: <Term k="jev" />, <Term k="groq" />, <Term k="hardpolicy" />, <Term k="confidence" />, <Term k="escalation" />, <Term k="idempotency" />, <Term k="fingerprint" />, <Term k="ledger" />, <Term k="trace" />.</p>
     </div>
   );
 }
