@@ -30,6 +30,10 @@ use serde::{Deserialize, Serialize};
 pub const SEVERE_SCORE: f64 = 3.0;
 /// Transfer this many times the user's usual maximum counts as far above normal.
 pub const FAR_ABOVE_TYPICAL_RATIO: f64 = 5.0;
+/// A new recipient receiving more than this multiple of the user's usual
+/// maximum is held for review whatever the device (1.0 = "bigger than anything
+/// you normally send").
+pub const NEW_RECIPIENT_ABOVE_USUAL_RATIO: f64 = 1.0;
 /// Recipients younger than this are "new".
 pub const NEW_RECIPIENT_DAYS: i64 = 30;
 /// Below this P(yes) a Noul answer is treated as "no".
@@ -157,12 +161,20 @@ pub fn deterministic_severe_signals(s: &DeterministicSignals) -> Vec<PolicyReaso
     let far_above = s
         .amount_to_typical_ratio
         .is_some_and(|r| r >= FAR_ABOVE_TYPICAL_RATIO);
+    let above_usual = s
+        .amount_to_typical_ratio
+        .is_some_and(|r| r > NEW_RECIPIENT_ABOVE_USUAL_RATIO);
     let unfamiliar = !s.device_trusted || !s.location_familiar;
     let mut out = vec![];
     if new_recipient && far_above && unfamiliar {
         out.push(reason(
             "NEW_RECIPIENT_FAR_ABOVE_TYPICAL_UNFAMILIAR_CONTEXT",
             "new recipient, amount far above the usual range, and unfamiliar device/location",
+        ));
+    } else if new_recipient && above_usual {
+        out.push(reason(
+            "NEW_RECIPIENT_ABOVE_USUAL_MAX",
+            "new recipient and the amount is larger than you normally send",
         ));
     }
     out
