@@ -179,9 +179,11 @@ impl Config {
 
         Ok(Config {
             app_env: var("APP_ENV").unwrap_or_else(|| "development".into()),
-            // Hosts like Render only provide PORT and need 0.0.0.0.
-            bind_addr: var("BIND_ADDR")
-                .or_else(|| var("PORT").map(|p| format!("0.0.0.0:{p}")))
+            // Hosts like Render inject PORT and need 0.0.0.0; it wins over a stray
+            // BIND_ADDR copied from a local .env.
+            bind_addr: var("PORT")
+                .map(|p| format!("0.0.0.0:{p}"))
+                .or_else(|| var("BIND_ADDR"))
                 .unwrap_or_else(|| "127.0.0.1:8080".into()),
             web_dir: var("WEB_DIR"),
             cors_origin: var("CORS_ORIGIN").unwrap_or_else(|| "http://localhost:5173".into()),
