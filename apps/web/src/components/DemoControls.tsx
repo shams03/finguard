@@ -60,7 +60,3 @@ export function ModePills({ providers }: { providers: Record<string, string | nu
   const item = (label: string, v?: string | null) => <Pill tone={live(v) ? "ok" : "mute"} icon={live(v) ? "bolt" : undefined}>{label}: {live(v) ? "live" : "offline demo"}</Pill>;
   return <div className="flex flex-wrap items-center gap-1.5">{item("Language", providers.intent_parser)}{item("Risk", providers.decision_provider)}</div>;
 }
-
-export function FilmLink({ onClick }: { onClick: () => void }) {
-  return <Button tone="ghost" size="sm" icon="film" onClick={onClick}>Watch the 90-second video</Button>;
-}

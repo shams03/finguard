@@ -1,21 +1,5 @@
-import { useState } from "react";
 import { FlowChart } from "../components/FlowChart";
 import { Button, Card, Icon, Term } from "../components/ui";
-
-function Video() {
-  const [failed, setFailed] = useState(false);
-  return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-black">
-      {failed ? (
-        <div className="p-8 text-center text-sm text-slate-300">The explainer video isn't built yet. Run <span className="font-mono text-slate-100">npm run video</span> in <span className="font-mono">apps/video</span> to render it.</div>
-      ) : (
-        <video controls preload="metadata" poster="/finguard-explainer-poster.jpg" className="aspect-video w-full" onError={() => setFailed(true)}>
-          <source src="/finguard-explainer.mp4" type="video/mp4" onError={() => setFailed(true)} />
-        </video>
-      )}
-    </div>
-  );
-}
 
 const GUARANTEES = [
   { icon: "shield", t: "A model can't move money", d: "Models return drafts and evidence in closed schemas. The only code that changes balances is the executor, and it needs a typed action plus your matching approval." },
@@ -43,8 +27,6 @@ export function How({ onGo }: { onGo: (to: string) => void }) {
         <h2 className="mt-1 text-3xl font-semibold tracking-tight text-slate-50">What happens to your request, step by step</h2>
         <p className="mt-2 max-w-3xl text-slate-300">Every request crosses three zones with strictly different powers: <b className="text-violet-300">models propose</b>, <b className="text-emerald-300">policy decides</b>, <b className="text-sky-300">executors execute</b>. Watch a request travel through them, then click any box to see who decides there and what happens if it fails.</p>
       </section>
-
-      <Card title="Watch it in under two minutes" right={<span className="text-xs text-slate-400">narrated · captions burned in</span>}><Video /></Card>
 
       <Card title="Follow a request" right={<Button size="sm" tone="ghost" icon="play" onClick={() => onGo("#/try")}>Try it for real</Button>}>
         <FlowChart />
