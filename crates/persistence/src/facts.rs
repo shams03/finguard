@@ -87,6 +87,50 @@ pub async fn list_recipients(conn: &mut PgConnection, user: UserId) -> Result<Ve
         .collect())
 }
 
+/// Max saved payees per user (keeps the demo address book small).
+pub const MAX_RECIPIENTS: i64 = 12;
+
+/// Outcome of adding a payee.
+pub enum AddRecipient {
+    Added(RecipientId),
+    Duplicate,
+    LimitReached,
+}
+
+/// Add a payee to the user's address book. It starts "new" (age 0), so the
+/// normal new-recipient risk rules apply to it until it has aged.
+pub async fn add_recipient(
+    conn: &mut PgConnection,
+    user: UserId,
+    display_name: &str,
+) -> Result<AddRecipient> {
+    let (count, dup): (i64, bool) = sqlx::query_as(
+        "SELECT COUNT(*), COALESCE(BOOL_OR(LOWER(display_name) = LOWER($2)), FALSE) FROM recipients WHERE user_id = $1",
+    )
+    .bind(user.as_uuid())
+    .bind(display_name)
+    .fetch_one(&mut *conn)
+    .await?;
+    if dup {
+        return Ok(AddRecipient::Duplicate);
+    }
+    if count >= MAX_RECIPIENTS {
+        return Ok(AddRecipient::LimitReached);
+    }
+    let id = Uuid::now_v7();
+    let masked = format!("•••• {:04}", id.as_u128() % 10_000);
+    sqlx::query(
+        "INSERT INTO recipients (id, user_id, display_name, account_masked, created_at) VALUES ($1, $2, $3, $4, clock_timestamp())",
+    )
+    .bind(id)
+    .bind(user.as_uuid())
+    .bind(display_name)
+    .bind(masked)
+    .execute(conn)
+    .await?;
+    Ok(AddRecipient::Added(RecipientId(id)))
+}
+
 /// Map a free-text reference ("Alex", "this new account") onto the user's own
 /// address book. Deterministic: a model's string never becomes an id without
 /// passing through here.

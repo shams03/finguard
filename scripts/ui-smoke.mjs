@@ -69,10 +69,17 @@ try {
   await api("/api/v1/demo/scenarios/low_balance"); await send("Page.reload"); await goto("#/try"); await sleep(600);
   await typeInto("#cmd", "Send ₱40,000 to Alex."); await must(await clickText("Send"), "send"); await waitFor("Not enough funds"); await waitFor("0 AI calls"); await shot("09-insufficient");
 
+  // unknown payee -> add them -> retry; unverified payee + big amount -> held
+  await api("/api/v1/demo/reset"); await send("Page.reload"); await goto("#/try"); await sleep(600);
+  await waitFor("Joe (unverified)");
+  await typeInto("#cmd", "pay Maria 500"); await must(await clickText("Send"), "send"); await waitFor("Who can you send money to"); await shot("09b-unknown-payee");
+  await typeInto("#newpayee", "Maria"); await must(await clickText("Add payee"), "add payee"); await waitFor("added as an unverified payee");
+  await must(await clickText("Send"), "send"); await waitFor("Approve sending"); await shot("09c-added-payee-approval");
+  await typeInto("#cmd", "Send ₱15,000 to Joe"); await must(await clickText("Send"), "send"); await waitFor("Held for review"); await shot("09d-joe-held");
+
   // how it works
   await goto("#/how"); await waitFor("Follow a request"); await sleep(1800);
-  const vd = await js(`(async () => { const v=document.querySelector('video'); if(!v) return -1; for (let i=0;i<40 && v.readyState<1;i++) await new Promise(r=>setTimeout(r,150)); return v.readyState>=1 ? v.duration : -2; })()`);
-  console.log("explainer video duration (s):", vd); if (!(vd > 60)) throw new Error("explainer video did not load in the How page");
+  if (await bodyHas("Watch it in under two minutes")) throw new Error("the explainer video should be gone from the How page");
   await shot("10-how");
   await must(await clickText("₱40,000 with only ₱20,000", "[role=tab]"), "flow scenario"); await sleep(1200);
   await js(`document.querySelector('[aria-label^="Safety rules"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`); await waitFor("Facts only"); await shot("11-how-node");

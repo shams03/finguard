@@ -242,3 +242,83 @@ async fn responses_never_contain_provider_secrets_or_db_urls(pool: PgPool) {
             && !s.to_lowercase().contains("password")
     );
 }
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn unknown_payee_blocked_until_added_then_big_transfer_held(pool: PgPool) {
+    let (app, _) = app(pool, "development").await;
+    let cmd = |text: &str, key: &str| {
+        let (app, text, key) = (app.clone(), text.to_owned(), key.to_owned());
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/agent/commands",
+                Some(&key),
+                Some(json!({ "text": text })),
+            )
+            .await
+        }
+    };
+
+    // Seeded address book: Alex plus the unverified Joe.
+    let (_, v) = call(&app, "GET", "/api/v1/recipients", None, None).await;
+    let names: Vec<&str> = v["recipients"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["display_name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["Alex Rivera", "Joe (unverified)"]);
+
+    // Someone not in the address book is stopped by the plain rules.
+    let (_, blocked) = cmd("Send ₱500 to Maria", "k1").await;
+    assert_eq!(blocked["status"], "BLOCKED");
+
+    // Bad names and duplicates are rejected.
+    for bad in ["", "x", "<script>"] {
+        let (st, _) = call(
+            &app,
+            "POST",
+            "/api/v1/recipients",
+            None,
+            Some(json!({"name": bad})),
+        )
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "{bad:?}");
+    }
+    let (st, _) = call(
+        &app,
+        "POST",
+        "/api/v1/recipients",
+        None,
+        Some(json!({"name": "alex rivera"})),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST);
+
+    // After adding her, a small transfer proceeds to approval and she shows as new.
+    let (st, v) = call(
+        &app,
+        "POST",
+        "/api/v1/recipients",
+        None,
+        Some(json!({"name": "  Maria   Santos "})),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED);
+    let maria = v["recipients"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["display_name"] == "Maria Santos")
+        .unwrap();
+    assert_eq!(maria["known"], false);
+    let (_, ok) = cmd("Send ₱500 to Maria", "k2").await;
+    assert_eq!(ok["status"], "AWAITING_CONFIRMATION");
+    assert_eq!(ok["proposed_action"]["recipient"], "Maria Santos");
+
+    // A big transfer to the unverified payee is held, not executed.
+    let (_, big) = cmd("Send ₱15,000 to Joe", "k3").await;
+    assert_ne!(big["status"], "EXECUTED");
+    assert_ne!(big["status"], "AWAITING_CONFIRMATION", "{big}");
+}

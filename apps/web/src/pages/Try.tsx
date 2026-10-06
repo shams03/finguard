@@ -16,6 +16,18 @@ const PENDING_STEPS: Step[] = [
   { key: "a", label: "Your approval", state: "todo", note: "" }, { key: "e", label: "Executed", state: "todo", note: "" },
 ];
 
+function AddPayee({ onAdd, busy }: { onAdd: (name: string) => void; busy: boolean }) {
+  const [name, setName] = useState("");
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); if (name.trim()) { onAdd(name.trim()); setName(""); } }} className="mt-3 flex flex-wrap items-center gap-2">
+      <label htmlFor="newpayee" className="sr-only">New payee name</label>
+      <input id="newpayee" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="Add a payee, e.g. Maria" autoComplete="off"
+        className="w-56 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-emerald-400" />
+      <Button type="submit" size="sm" icon="user" disabled={busy || !name.trim()}>Add payee</Button>
+    </form>
+  );
+}
+
 function Payees({ recipients, onPick, bare }: { recipients: RecipientView[]; onPick: (r: RecipientView) => void; bare?: boolean }) {
   if (!recipients.length) return null;
   return (
@@ -26,7 +38,7 @@ function Payees({ recipients, onPick, bare }: { recipients: RecipientView[]; onP
           <button key={r.id} type="button" onClick={() => onPick(r)} title={r.blocked ? "Blocked recipient" : r.known ? "Established payee" : `Added ${r.age_days} day(s) ago — treated as new`}
             className="flex items-center gap-2 rounded-full border border-line bg-panel/70 px-3 py-1 text-sm text-slate-200 transition hover:border-emerald-400/60">
             <Icon name="user" className="h-3.5 w-3.5 text-emerald-300" />{r.display_name}<span className="font-mono text-xs text-slate-500">{r.account_masked}</span>
-            {r.blocked ? <Pill tone="bad">blocked</Pill> : !r.known && <Pill tone="warn">new</Pill>}
+            {r.blocked ? <Pill tone="bad">blocked</Pill> : !r.known && <Pill tone="warn">new · big transfers held</Pill>}
           </button>
         ))}
       </div>
@@ -112,6 +124,11 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
   const reset = () => guard(async () => { await api.reset(); setView(null); toast("info", "Demo reset."); });
   const open = (id: string) => guard(async () => { setView(await api.action(id)); });
 
+  const addPayee = (name: string) => guard(async () => {
+    setRecipients(await api.addRecipient(name));
+    setText(`Send ₱500 to ${name.split(" ")[0]}`);
+    toast("ok", `${name} added as an unverified payee. Small transfers work; big ones are held for review.`);
+  });
   const pickPayee = (r: RecipientView) => {
     setText(`Send ₱500 to ${r.display_name.split(" ")[0]}`);
     inputRef.current?.focus();
@@ -131,6 +148,8 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
           </form>
           <p className="mt-2 text-xs text-slate-400">Type in plain English, or pick a scenario below. Nothing moves until you approve.</p>
           <Payees recipients={recipients} onPick={pickPayee} />
+          <p className="mt-2 text-xs text-slate-400">Paying someone new? <b className="text-slate-200">Add them as a payee first</b> — otherwise the safety rules block the request. New payees start as <i>unverified</i>: small transfers work, big ones are held for review until they've aged.</p>
+          <AddPayee onAdd={addPayee} busy={busy} />
         </Card>
 
         {phase !== undefined && (
@@ -148,6 +167,8 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
           <Card title="Who can you send money to?">
             <p className="mb-3 text-sm text-slate-300">That name isn't in your saved payees, so the safety rules stopped it. In this demo you can only pay people already in your address book:</p>
             <Payees recipients={recipients} onPick={pickPayee} bare />
+            <p className="mt-4 text-sm text-slate-300">Paying someone new? Add them as a payee, then send your request again.</p>
+            <AddPayee onAdd={addPayee} busy={busy} />
           </Card>
         )}
 

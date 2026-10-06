@@ -113,7 +113,10 @@ pub fn router(state: AppState, cors_origin: &str, web_dir: Option<&str>) -> Rout
         .route("/health", get(health))
         .route("/api/v1/account", get(get_account))
         .route("/api/v1/cards", get(get_cards))
-        .route("/api/v1/recipients", get(get_recipients))
+        .route(
+            "/api/v1/recipients",
+            get(get_recipients).post(add_recipient),
+        )
         .route("/api/v1/transactions", get(get_transactions))
         .route("/api/v1/agent/commands", post(post_command))
         .route("/api/v1/actions", get(list_actions))
@@ -300,6 +303,62 @@ async fn get_recipients(
     Ok(Json(
         json!({"recipients": reads::recipients(&mut c, a.user_id).await.map_err(|e| db_err(e, &ctx))?}),
     ))
+}
+
+#[derive(Deserialize)]
+struct AddRecipientBody {
+    name: String,
+}
+
+async fn add_recipient(
+    State(s): State<AppState>,
+    Extension(ctx): Extension<RequestCtx>,
+    ApiJson(body): ApiJson<AddRecipientBody>,
+) -> ApiResult<(StatusCode, Json<Value>)> {
+    let name = body.name.split_whitespace().collect::<Vec<_>>().join(" ");
+    let len = name.chars().count();
+    if !(2..=40).contains(&len)
+        || !name
+            .chars()
+            .all(|c| c.is_alphanumeric() || matches!(c, ' ' | '.' | '-' | '\''))
+    {
+        return Err(ApiError::invalid(
+            "name must be 2-40 characters: letters, numbers, spaces, . - '",
+            ctx.trace_id,
+        ));
+    }
+    let a = actor(&s, &ctx).await?;
+    let mut c = s
+        .store
+        .pool()
+        .acquire()
+        .await
+        .map_err(|e| db_err(e.into(), &ctx))?;
+    match facts::add_recipient(&mut c, a.user_id, &name)
+        .await
+        .map_err(|e| db_err(e, &ctx))?
+    {
+        facts::AddRecipient::Added(_) => {}
+        facts::AddRecipient::Duplicate => {
+            return Err(ApiError::invalid(
+                "you already have a payee with that name",
+                ctx.trace_id,
+            ));
+        }
+        facts::AddRecipient::LimitReached => {
+            return Err(ApiError::invalid(
+                format!(
+                    "payee limit reached ({} max); reset the demo to clear them",
+                    facts::MAX_RECIPIENTS
+                ),
+                ctx.trace_id,
+            ));
+        }
+    }
+    let list = reads::recipients(&mut c, a.user_id)
+        .await
+        .map_err(|e| db_err(e, &ctx))?;
+    Ok((StatusCode::CREATED, Json(json!({"recipients": list}))))
 }
 
 async fn get_transactions(

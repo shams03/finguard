@@ -161,7 +161,7 @@ pub async fn reset_demo(pool: &PgPool, setup: &DemoSetup) -> Result<()> {
 
     sqlx::query("INSERT INTO recipients (id, user_id, display_name, account_masked, created_at) VALUES ($1, $2, 'Alex Rivera', '•••• 7788', $3)")
         .bind(RECIPIENT_ALEX).bind(USER).bind(day(240)).execute(&mut *tx).await?;
-    sqlx::query("INSERT INTO recipients (id, user_id, display_name, account_masked, created_at) VALUES ($1, $2, 'New payee (unverified)', '•••• 4417', $3)")
+    sqlx::query("INSERT INTO recipients (id, user_id, display_name, account_masked, created_at) VALUES ($1, $2, 'Joe (unverified)', '•••• 4417', $3)")
         .bind(RECIPIENT_NEW).bind(USER).bind(day(2)).execute(&mut *tx).await?;
 
     // History: (days ago, kind, category, description, signed centavos, recipient)

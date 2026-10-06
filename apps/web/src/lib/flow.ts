@@ -47,7 +47,7 @@ export const FLOW_SCENARIOS: FlowScenario[] = [
   { id: "ambiguous", title: "Send Alex “the usual amount”", text: "Send Alex the usual amount.", outcome: "Asks one question instead of guessing", tone: "warn",
     path: [...HEAD, "risk", "escal", "policy", "ask"],
     notes: { intent: "No amount was written, so none is invented. missing: amount.", hard: "Amount checks are SKIPPED (not silently passed).", risk: "Context is insufficient → low confidence (~34%).", escal: "Groq phrases: “You usually send Alex ₱5,000…” — the ₱5,000 comes from a SQL query.", ask: "Your answer creates a NEW action; every check runs again." } },
-  { id: "suspicious", title: "₱75,000 to a brand-new account", text: "Send ₱75,000 to this new account.", outcome: "Held for review — no funds move", tone: "warn",
+  { id: "suspicious", title: "₱75,000 to Joe (unverified)", text: "Send ₱75,000 to Joe.", outcome: "Held for review — no funds move", tone: "warn",
     path: [...HEAD, "risk", "policy", "review"],
     notes: { hard: "Technically possible: balance is enough, so rules PASS.", risk: "Anomaly 3.8/4, recipient risk 3.9/4.", policy: "MANUAL_REVIEW: new payee + 9× usual amount + unfamiliar phone/location.", review: "Risk evidence can hold an action for a human but never hard-blocks it." } },
   { id: "insufficient", title: "₱40,000 with only ₱20,000", text: "Send ₱40,000 to Alex.", outcome: "Blocked by a plain fact — 0 AI calls", tone: "bad",

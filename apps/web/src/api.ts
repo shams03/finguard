@@ -38,6 +38,7 @@ export const api = {
   account: () => request<AccountResp>("/api/v1/account"),
   cards: () => request<{ cards: CardView[] }>("/api/v1/cards").then((r) => r.cards),
   recipients: () => request<{ recipients: RecipientView[] }>("/api/v1/recipients").then((r) => r.recipients),
+  addRecipient: (name: string) => post<{ recipients: RecipientView[] }>("/api/v1/recipients", { name }).then((r) => r.recipients),
   transactions: () => request<{ transactions: TransactionView[] }>("/api/v1/transactions").then((r) => r.transactions),
   actions: () => request<{ actions: ActionListItem[] }>("/api/v1/actions").then((r) => r.actions),
   command: (text: string, key: string) => post<ActionView>("/api/v1/agent/commands", { text }, key),
