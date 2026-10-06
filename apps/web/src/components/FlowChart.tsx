@@ -5,22 +5,32 @@ import { Button, Icon, Pill } from "./ui";
 
 const byId = Object.fromEntries(NODES.map((n) => [n.id, n])) as Record<string, FlowNode>;
 
-function anchor(a: FlowNode, b: FlowNode): { d: string; lx: number; ly: number } {
+function anchor(a: FlowNode, b: FlowNode, dx = 0): { d: string; lx: number; ly: number } {
   const ac = { x: a.x + a.w / 2, y: a.y + a.h / 2 }, bc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
   // same row → horizontal
   if (Math.abs(a.y - b.y) < 20) {
     const right = bc.x > ac.x;
     const x1 = right ? a.x + a.w : a.x, x2 = right ? b.x : b.x + b.w;
-    return { d: `M ${x1} ${ac.y} L ${x2} ${bc.y}`, lx: (x1 + x2) / 2, ly: ac.y - 8 };
+    return { d: `M ${x1} ${ac.y} L ${x2} ${bc.y}`, lx: (x1 + x2) / 2, ly: ac.y - 9 };
   }
   // same column, going back up (answer loop) → bulge to the left
   if (b.y < a.y && Math.abs(a.x - b.x) < 20) {
-    const x = a.x - 38;
-    return { d: `M ${a.x} ${ac.y} C ${x} ${ac.y}, ${x} ${bc.y}, ${b.x} ${bc.y}`, lx: x + 4, ly: (ac.y + bc.y) / 2 };
+    const x = a.x - 30;
+    return { d: `M ${a.x} ${ac.y} C ${x} ${ac.y}, ${x} ${bc.y}, ${b.x} ${bc.y}`, lx: x - 4, ly: (ac.y + bc.y) / 2 };
   }
-  const x1 = ac.x, y1 = a.y + a.h, x2 = bc.x, y2 = b.y;
-  const dy = Math.max(30, (y2 - y1) / 2);
-  return { d: `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`, lx: (x1 + x2) / 2, ly: (y1 + y2) / 2 };
+  // up and to the right → leave through the top, enter the target from the left
+  if (b.y < a.y) {
+    const x1 = a.x + a.w - 60;
+    return { d: `M ${x1} ${a.y} C ${x1} ${bc.y}, ${x1 + 20} ${bc.y}, ${b.x} ${bc.y}`, lx: (x1 + b.x) / 2 + 8, ly: bc.y - 9 };
+  }
+  // down and to the right → leave through the bottom, enter the target from the left
+  if (b.x >= a.x + a.w) {
+    const x1 = ac.x, y1 = a.y + a.h;
+    return { d: `M ${x1} ${y1} C ${x1} ${bc.y}, ${b.x - 60} ${bc.y}, ${b.x} ${bc.y}`, lx: (x1 + b.x) / 2, ly: bc.y - 9 };
+  }
+  const x1 = ac.x + dx, y1 = a.y + a.h, x2 = bc.x + dx, y2 = b.y;
+  const d = Math.max(30, (y2 - y1) / 2);
+  return { d: `M ${x1} ${y1} C ${x1} ${y1 + d}, ${x2} ${y2 - d}, ${x2} ${y2}`, lx: (x1 + x2) / 2, ly: (y1 + y2) / 2 };
 }
 
 const NODE_COLOR: Record<string, { fill: string; stroke: string; text: string }> = {
@@ -46,7 +56,7 @@ export function FlowChart() {
   const pathRefs = useRef<Record<string, SVGPathElement | null>>({});
   const [lens, setLens] = useState<Record<string, number>>({});
 
-  const geo = useMemo(() => Object.fromEntries(EDGES.map((e) => [`${e.from}>${e.to}`, anchor(byId[e.from], byId[e.to])])), []);
+  const geo = useMemo(() => Object.fromEntries(EDGES.map((e) => [`${e.from}>${e.to}`, anchor(byId[e.from], byId[e.to], e.dx)])), []);
   useEffect(() => {
     const l: Record<string, number> = {};
     for (const k of Object.keys(pathRefs.current)) { const el = pathRefs.current[k]; if (el) l[k] = el.getTotalLength(); }
@@ -82,12 +92,26 @@ export function FlowChart() {
   const pathSet = new Set(scenario.path);
   const visited = new Set(scenario.path.slice(0, reachedIdx + (ph.type === "travel" ? 1 : 1)));
 
-  let packet: { x: number; y: number } | null = null;
+  // The dot rides along the arrows and fades out as it enters a box / back in as it leaves, so it never jumps or sits on the text.
+  const edgePoint = (pairIdx: number, end: boolean) => {
+    const el = pathRefs.current[pairs[pairIdx]], L = lens[pairs[pairIdx]];
+    if (!el || !L) return null;
+    const pt = el.getPointAtLength(end ? L : 0);
+    return { x: pt.x, y: pt.y };
+  };
+  const ease = (f: number) => (f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2);
+  let packet: { x: number; y: number; o: number } | null = null;
   if (ph.type === "travel") {
-    const el = pathRefs.current[pairs[ph.idx]];
-    const L = lens[pairs[ph.idx]];
-    if (el && L) { const f = (time - ph.start) / (ph.end - ph.start); const e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2; const pt = el.getPointAtLength(e * L); packet = { x: pt.x, y: pt.y }; }
-  } else { const n = byId[scenario.path[ph.idx]]; packet = { x: n.x + 14, y: n.y + n.h / 2 }; }
+    const el = pathRefs.current[pairs[ph.idx]], L = lens[pairs[ph.idx]];
+    if (el && L) { const pt = el.getPointAtLength(ease((time - ph.start) / (ph.end - ph.start)) * L); packet = { x: pt.x, y: pt.y, o: 1 }; }
+  } else {
+    const entry = ph.idx > 0 ? edgePoint(ph.idx - 1, true) : null;
+    const exit = ph.idx < pairs.length ? edgePoint(ph.idx, false) : null;
+    const t = time - ph.start, dur = ph.end - ph.start;
+    if (exit && t > dur - 350) packet = { ...exit, o: Math.min(1, (t - (dur - 350)) / 350) };
+    else if (entry) packet = { ...entry, o: Math.max(0, 1 - t / 350) };
+    else if (exit) packet = { ...exit, o: 1 };
+  }
 
   const infoId = picked ?? activeNode;
   const info = NODE_INFO[infoId];
@@ -125,13 +149,13 @@ export function FlowChart() {
 
       <div className="space-y-4">
         <div className="overflow-x-auto rounded-2xl border border-line bg-ink p-2">
-          <svg viewBox="-50 0 1230 860" className="min-w-[900px]" role="img" aria-label="Flowchart of how a request travels through FinGuard">
+          <svg viewBox="-60 0 1330 920" className="min-w-[1000px]" role="img" aria-label="Flowchart of how a request travels through FinGuard">
             <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor" /></marker></defs>
             {LANES.map((l) => (
               <g key={l.id}>
-                <rect x={l.x} y={100} width={l.w} height={740} rx={22} className={l.cls} strokeWidth={1} />
-                <text x={l.x + 18} y={124} className="fill-slate-300" fontSize="13" fontWeight="700" letterSpacing="2.2">{l.label}</text>
-                <text x={l.x + l.w - 18} y={124} textAnchor="end" className="fill-slate-500" fontSize="12">{l.sub}</text>
+                <rect x={l.x} y={110} width={l.w} height={780} rx={22} className={l.cls} strokeWidth={1} />
+                <text x={l.x + 18} y={868} className="fill-slate-300" fontSize="12.5" fontWeight="700" letterSpacing="1.4">{l.label}</text>
+                <text x={l.x + l.w - 18} y={868} textAnchor="end" className="fill-slate-500" fontSize="11.5">{l.sub}</text>
               </g>
             ))}
             {EDGES.map((e) => {
@@ -139,7 +163,6 @@ export function FlowChart() {
               return (
                 <g key={k} className={on ? (done ? "text-emerald-300" : "text-sky-300") : "text-slate-600"} opacity={on ? 1 : 0.45}>
                   <path ref={(el) => { pathRefs.current[k] = el; }} d={g.d} fill="none" stroke="currentColor" strokeWidth={on ? 2.6 : 1.4} strokeDasharray={e.dashed || (on && !done) ? "6 6" : undefined} markerEnd="url(#arr)" className={on && !done ? "flow-edge-live" : ""} />
-                  {e.label && <text x={g.lx} y={g.ly} textAnchor="middle" fontSize="11.5" className={on ? "fill-slate-200" : "fill-slate-500"} paintOrder="stroke" stroke="#070b16" strokeWidth={4}>{e.label}</text>}
                 </g>
               );
             })}
@@ -157,7 +180,11 @@ export function FlowChart() {
                 </g>
               );
             })}
-            {packet && !finished && <g><circle cx={packet.x} cy={packet.y} r={13} fill="#38bdf8" opacity={0.25} /><circle cx={packet.x} cy={packet.y} r={7} fill="#7dd3fc" stroke="#fff" strokeWidth={2} /></g>}
+            {EDGES.filter((e) => e.label).map((e) => {
+              const g = geo[`${e.from}>${e.to}`], on = edgeOn(e);
+              return <text key={`l-${e.from}>${e.to}`} x={g.lx} y={g.ly} textAnchor="middle" fontSize="11" className={on ? "fill-slate-100" : "fill-slate-500"} paintOrder="stroke" stroke="#070b16" strokeWidth={5} strokeLinejoin="round" pointerEvents="none">{e.label}</text>;
+            })}
+            {packet && !finished && packet.o > 0.02 && <g opacity={packet.o}><circle cx={packet.x} cy={packet.y} r={13} fill="#38bdf8" opacity={0.25} /><circle cx={packet.x} cy={packet.y} r={7} fill="#7dd3fc" stroke="#fff" strokeWidth={2} /></g>}
           </svg>
         </div>
 

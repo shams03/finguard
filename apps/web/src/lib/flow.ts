@@ -4,7 +4,7 @@ export type NodeKind = "normal" | "stop" | "warn" | "ok";
 
 export interface FlowNode { id: string; lane: Lane; x: number; y: number; w: number; h: number; n?: string; title: string; sub: string; kind?: NodeKind }
 
-const M = 35, P = 425, E = 815, W = 330, H = 76;
+const M = 35, P = 465, E = 895, W = 330, H = 76;
 export const NODES: FlowNode[] = [
   { id: "user", lane: "entry", x: 35, y: 16, w: 220, h: H, title: "You", sub: "type a request" },
   { id: "api", lane: "entry", x: 300, y: 16, w: 260, h: H, title: "Rust API", sub: "request id · trace id · who you are" },
@@ -24,11 +24,11 @@ export const NODES: FlowNode[] = [
   { id: "trace", lane: "policy", x: P, y: 760, w: W, h: H, n: "10", title: "Trace", sub: "Rebuild the whole story from the audit log" },
 ];
 
-export interface FlowEdge { from: string; to: string; label?: string; dashed?: boolean }
+export interface FlowEdge { from: string; to: string; label?: string; dashed?: boolean; dx?: number }
 export const EDGES: FlowEdge[] = [
   { from: "user", to: "api" }, { from: "api", to: "idem" }, { from: "idem", to: "intent" }, { from: "intent", to: "typed" },
   { from: "typed", to: "hard" }, { from: "hard", to: "blocked", label: "a rule fails" }, { from: "hard", to: "risk", label: "passes (money)" },
-  { from: "hard", to: "policy", label: "read-only: no AI", dashed: true }, { from: "risk", to: "policy", label: "confident" },
+  { from: "hard", to: "policy", label: "read-only: no AI", dashed: true, dx: 100 }, { from: "risk", to: "policy", label: "confident" },
   { from: "risk", to: "escal", label: "not sure" }, { from: "escal", to: "policy", label: "advice only" },
   { from: "policy", to: "ask", label: "needs a detail" }, { from: "policy", to: "review", label: "risky" },
   { from: "policy", to: "confirm", label: "needs approval" }, { from: "confirm", to: "exec" }, { from: "policy", to: "exec", label: "read-only", dashed: true },
@@ -80,6 +80,6 @@ export const NODE_INFO: Record<string, NodeInfo> = {
 
 export const LANES: { id: Lane; label: string; sub: string; x: number; w: number; cls: string }[] = [
   { id: "models", label: "MODELS PROPOSE", sub: "language & risk evidence", x: 20, w: 360, cls: "fill-violet-500/[0.06] stroke-violet-400/30" },
-  { id: "policy", label: "POLICY DECIDES", sub: "plain, tested code", x: 410, w: 360, cls: "fill-emerald-500/[0.06] stroke-emerald-400/30" },
-  { id: "exec", label: "EXECUTORS EXECUTE", sub: "transactions & the ledger", x: 800, w: 360, cls: "fill-sky-500/[0.06] stroke-sky-400/30" },
+  { id: "policy", label: "POLICY DECIDES", sub: "plain, tested code", x: 450, w: 360, cls: "fill-emerald-500/[0.06] stroke-emerald-400/30" },
+  { id: "exec", label: "EXECUTORS EXECUTE", sub: "transactions & the ledger", x: 880, w: 360, cls: "fill-sky-500/[0.06] stroke-sky-400/30" },
 ];
