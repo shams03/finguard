@@ -6,7 +6,7 @@ import { Button, Card, Collapsible, Icon, Pill, Stepper, statusLabel, statusTone
 import { SCENARIOS } from "../lib/scenarios";
 import type { Scenario, TourId } from "../lib/scenarios";
 import type { Step } from "../lib/stages";
-import type { ActionListItem, ActionView } from "../types";
+import type { ActionListItem, ActionView, RecipientView } from "../types";
 
 export interface DemoCommand { text: string; scenario?: Scenario["setup"] }
 
@@ -15,6 +15,24 @@ const PENDING_STEPS: Step[] = [
   { key: "k", label: "Risk check", state: "todo", note: "" }, { key: "d", label: "Decision", state: "todo", note: "" },
   { key: "a", label: "Your approval", state: "todo", note: "" }, { key: "e", label: "Executed", state: "todo", note: "" },
 ];
+
+function Payees({ recipients, onPick, bare }: { recipients: RecipientView[]; onPick: (r: RecipientView) => void; bare?: boolean }) {
+  if (!recipients.length) return null;
+  return (
+    <div className={bare ? "" : "mt-3"}>
+      {!bare && <p className="mb-1.5 text-xs text-slate-400">Saved payees you can send to — click one to fill it in:</p>}
+      <div className="flex flex-wrap gap-2">
+        {recipients.map((r) => (
+          <button key={r.id} type="button" onClick={() => onPick(r)} title={r.blocked ? "Blocked recipient" : r.known ? "Established payee" : `Added ${r.age_days} day(s) ago — treated as new`}
+            className="flex items-center gap-2 rounded-full border border-line bg-panel/70 px-3 py-1 text-sm text-slate-200 transition hover:border-emerald-400/60">
+            <Icon name="user" className="h-3.5 w-3.5 text-emerald-300" />{r.display_name}<span className="font-mono text-xs text-slate-500">{r.account_masked}</span>
+            {r.blocked ? <Pill tone="bad">blocked</Pill> : !r.known && <Pill tone="warn">new</Pill>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
   pending: DemoCommand | null; onPendingDone: () => void; onChanged: () => void; onTrace: (id: string) => void; onOutcome: (id: TourId) => void;
@@ -25,11 +43,15 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<number | undefined>();
   const [history, setHistory] = useState<ActionListItem[]>([]);
+  const [recipients, setRecipients] = useState<RecipientView[]>([]);
   const lastConfirm = useRef<{ actionId: string; confirmationId: string; key: string } | null>(null);
   const timers = useRef<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const refreshHistory = useCallback(() => { api.actions().then(setHistory).catch(() => undefined); }, []);
+  const refreshHistory = useCallback(() => {
+    api.actions().then(setHistory).catch(() => undefined);
+    api.recipients().then(setRecipients).catch(() => undefined);
+  }, []);
   useEffect(refreshHistory, [refreshHistory]);
 
   // Animate the pipeline while the server works: honest "we're on it" progress, then the real result replaces it.
@@ -90,6 +112,12 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
   const reset = () => guard(async () => { await api.reset(); setView(null); toast("info", "Demo reset."); });
   const open = (id: string) => guard(async () => { setView(await api.action(id)); });
 
+  const pickPayee = (r: RecipientView) => {
+    setText(`Send ₱500 to ${r.display_name.split(" ")[0]}`);
+    inputRef.current?.focus();
+  };
+  const unknownPayee = !!view && view.explorer.hard_policy?.checks.some((c) => c.name === "Recipient valid" && c.status === "FAIL");
+
   const showGuide = !view && phase === undefined;
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
@@ -102,6 +130,7 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
             <Button type="submit" tone="primary" size="lg" icon="arrow" disabled={busy || !text.trim()}>{busy ? "Working…" : "Send"}</Button>
           </form>
           <p className="mt-2 text-xs text-slate-400">Type in plain English, or pick a scenario below. Nothing moves until you approve.</p>
+          <Payees recipients={recipients} onPick={pickPayee} />
         </Card>
 
         {phase !== undefined && (
@@ -113,6 +142,13 @@ export function Try({ pending, onPendingDone, onChanged, onTrace, onOutcome }: {
             busy, onConfirm: () => confirm(view), onCancel: () => cancel(view), onReset: reset,
             onClarify: (b) => clarify(view, b), onRetryLost: lastConfirm.current ? retryLost : undefined, onTrace: () => onTrace(view.action_id),
           }} />
+        )}
+
+        {view && phase === undefined && unknownPayee && (
+          <Card title="Who can you send money to?">
+            <p className="mb-3 text-sm text-slate-300">That name isn't in your saved payees, so the safety rules stopped it. In this demo you can only pay people already in your address book:</p>
+            <Payees recipients={recipients} onPick={pickPayee} bare />
+          </Card>
         )}
 
         {showGuide && (
